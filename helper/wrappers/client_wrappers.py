@@ -1,6 +1,6 @@
 import gym
 import numpy as np
-
+from gym.utils import seeding
 from .Wrapper import EnvironmentWrapper
 
 
@@ -34,3 +34,7 @@ class JSONable(EnvironmentWrapper):
             return self.env.step(action.tolist())
         else:
             return self.env.step(action)
+
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]

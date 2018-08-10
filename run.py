@@ -21,7 +21,8 @@ from helper.wrappers import ClientToEnv, DictToListFull, ForceDictObservation, J
 from helper.CONFIG import remote_base, crowdai_token
 from helper.baselines import *
 from agents import *
-
+from mpi4py import MPI
+from baselines import logger, bench
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run or submit agent.')
@@ -61,6 +62,8 @@ if __name__ == '__main__':
         env = DictToListFull(env)
         env = JSONable(env)
         agent = SpecifiedAgent(env.observation_space, env.action_space)
+        if MPI.COMM_WORLD.Get_rank() == 0:
+            logger.configure()
         agent.train(env, int(args.nb_steps))
     else:
         # Test agent locally

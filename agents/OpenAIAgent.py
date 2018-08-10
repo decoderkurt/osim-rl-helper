@@ -32,9 +32,25 @@ class OpenAIAgent(Agent):
         self.memory = Memory(limit=int(1e6), action_shape=action_space.shape, observation_shape=observation_space.shape)
         self.critic = Critic(layer_norm=True)
         self.actor = Actor(nb_actions, layer_norm=True)
+        self.seed  = 0
 
     def train(self, env, nb_steps):
+        # Configure things.
+        rank = MPI.COMM_WORLD.Get_rank()
+        if rank != 0:
+            logger.set_level(logger.DISABLED)
+        # Seed everything to make things reproducible.
+        seed = self.seed + 1000000 * rank
+        logger.info('rank {}: seed={}, logdir={}'.format(rank, seed, logger.get_dir()))
+        tf.reset_default_graph()
+        set_global_seeds(seed)
+        env.seed(seed)
+
+        # Disable logging for rank != 0 to avoid noise.
+        if rank == 0:
+            start_time = time.time()
         training.train(env=env, param_noise=self.param_noise,
             action_noise=self.action_noise, actor=self.actor, critic=self.critic, memory=self.memory,
             nb_epochs=500, nb_epoch_cycles=20, render_eval=False, reward_scale=1.0, render=False, normalize_returns=False, normalize_observations=True, critic_l2_reg=1e-2, actor_lr=1e-4, critic_lr=1e-3, popart=False, gamma=0.99, clip_norm=None, nb_train_steps=nb_steps, nb_rollout_steps=100, nb_eval_steps=100, batch_size=64)
-
+        if rank == 0:
+            logger.info('total runtime: {}s'.format(time.time() - start_time))
