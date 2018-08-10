@@ -1,4 +1,6 @@
 from .Wrapper import EnvironmentWrapper
+import gym
+import numpy as np
 
 
 class ForceDictObservation(EnvironmentWrapper):
@@ -11,7 +13,9 @@ class ForceDictObservation(EnvironmentWrapper):
         super().__init__(env)
         self.env = env
         self.time_limit = 300
-    
+        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(19, ),
+                                           dtype=np.float32)
+
     def reset(self):
         return self.env.reset(project=False)
 
