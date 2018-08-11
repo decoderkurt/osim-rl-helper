@@ -12,6 +12,9 @@ import baselines.ddpg.training as training
 from baselines.ddpg.models import Actor, Critic
 from baselines.ddpg.memory import Memory
 from baselines.ddpg.noise import *
+#import cloudpickle
+#from baselines.common import tf_util as U
+#from baselines.common.tf_util import load_state, save_state
 
 import gym
 import tensorflow as tf
@@ -53,8 +56,11 @@ class OpenAIAgent(Agent):
         # Disable logging for rank != 0 to avoid noise.
         if rank == 0:
             start_time = time.time()
+        #load_state("D:\project\osim-rl-helper\ddpg.pkl")
         training.train(env=env, param_noise=param_noise,
             action_noise=action_noise, actor=actor, critic=critic, memory=memory,
             nb_epochs=500, nb_epoch_cycles=20, render_eval=False, reward_scale=1.0, render=False, normalize_returns=False, normalize_observations=True, critic_l2_reg=1e-2, actor_lr=1e-4, critic_lr=1e-3, popart=False, gamma=0.99, clip_norm=None, nb_train_steps=nb_steps, nb_rollout_steps=100, nb_eval_steps=100, batch_size=64)
+        #save_state("D:\project\osim-rl-helper\ddpg.pkl")
+
         if rank == 0:
             logger.info('total runtime: {}s'.format(time.time() - start_time))
