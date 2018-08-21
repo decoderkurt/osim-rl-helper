@@ -1,5 +1,5 @@
 from keras.models import Sequential, Model
-from keras.layers import Dense, Activation, Flatten, Input, concatenate
+from keras.layers import Dense, Activation, Flatten, Input, concatenate, GaussianNoise, Lambda
 from keras.optimizers import Adam, RMSprop
 
 from rl.agents import DDPGAgent
@@ -7,7 +7,7 @@ from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess
 
 from ...templates import KerasAgent
-
+from keras.initializers import RandomUniform
 
 class KerasDDPGAgent(KerasAgent):
     """
@@ -26,14 +26,19 @@ class KerasDDPGAgent(KerasAgent):
             # Actor network
             actor = Sequential()
             actor.add(Flatten(input_shape=(1,) + observation_space.shape))
-            actor.add(Dense(32))
+            actor.add(Dense(256))
             actor.add(Activation('relu'))
-            actor.add(Dense(32))
+            actor.add(GaussianNoise(1.0))
+            actor.add(Dense(128))
             actor.add(Activation('relu'))
-            actor.add(Dense(32))
-            actor.add(Activation('relu'))
-            actor.add(Dense(nb_actions))
-            actor.add(Activation('sigmoid'))
+            actor.add(GaussianNoise(1.0))
+            #actor.add(Dense(32))
+            #actor.add(Activation('relu'))
+            #actor.add(GaussianNoise(1.0))
+            #actor.add(Dense(nb_actions))
+            #actor.add(Activation('tanh'))
+            actor.add(Dense(nb_actions, activation='tanh', kernel_initializer=RandomUniform()))
+            actor.add(Lambda(lambda i: i * action_space.high))
             print(actor.summary())
 
             # Critic network
@@ -41,14 +46,15 @@ class KerasDDPGAgent(KerasAgent):
             observation_input = Input(shape=(1,) + observation_space.shape, name='observation_input')
             flattened_observation = Flatten()(observation_input)
             x = concatenate([action_input, flattened_observation])
-            x = Dense(64)(x)
+            x = Dense(256)(x)
             x = Activation('relu')(x)
-            x = Dense(64)(x)
+            x = Dense(128)(x)
             x = Activation('relu')(x)
-            x = Dense(64)(x)
-            x = Activation('relu')(x)
-            x = Dense(1)(x)
-            x = Activation('linear')(x)
+            #x = Dense(64)(x)
+            #x = Activation('relu')(x)
+            #x = Dense(1)(x)
+            #x = Activation('linear')(x)
+            x = Dense(1, activation='linear', kernel_initializer=RandomUniform())(x)
             critic = Model(inputs=[action_input, observation_input], outputs=x)
             print(critic.summary())
 
